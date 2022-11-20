@@ -30,7 +30,7 @@ export class AuthService {
     async sign(user: User) {
         const payload = { username: user.username, sub: user.id, id: user.id}
         // const userValidate = await this.validateUser(user.username, user.password)
-        return this.jwtService.signAsync(payload, {privateKey: 'secret', expiresIn: '24h'})
+        return this.jwtService.signAsync(payload, {privateKey: process.env.JWT_SECRET, expiresIn: '24h'})
 
     }
 }
