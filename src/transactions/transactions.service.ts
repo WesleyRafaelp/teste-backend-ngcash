@@ -37,7 +37,7 @@ export class TransactionsService {
       throw new BadRequestException()
     }
 
-    const valiidateTransaction = await this.usersService.validateCashOut(currentUser, userCashIn.username, createCashOutDto.value);
+    await this.usersService.validateCashOut(currentUser, userCashIn.username, createCashOutDto.value);
 
     const createTransaction = this.transactionRepository.create({
       debitedAccount: currentUser.account,
@@ -60,51 +60,38 @@ export class TransactionsService {
     return 'a new transaction created';
   }
 
-  async findAllUserTransaction(currentUser: User) {
-    const user = await this.usersService.findOneUser(currentUser.username);
-
-    const allTransactionCashOut = await this.transactionRepository.find({
-      where: { 
-        debitedAccount: user.account 
-      }
-    })
-
-    const allTransactionCashIn = await this.transactionRepository.find({
-      where: { 
-        creditedAccount: user.account 
-      },
-    })
-
-    const all = { cash_out: [allTransactionCashOut], cash_in: [allTransactionCashIn]};
-
-    return all;
-  }
-
   async filterTransaction( filter : TransactionFilterDto , currentUser: User) {
     const query = await this.transactionRepository.createQueryBuilder('transactions')
+    .select([
+      'transactions.id',
+      'creditedAccount.id',
+      'debitedAccount.id',
+      'transactions.value',
+      'transactions.createdAt'
+    ])
+    .innerJoin('transactions.creditedAccount', 'creditedAccount')
+    .innerJoin('transactions.debitedAccount', 'debitedAccount')
 
       if(filter.role ===  TransactionRole.CashIn ){
-        query.andWhere("transactions.creditedAccountId = :accountId", {accountId :currentUser.id })
+        query.andWhere('transactions.creditedAccount = :accountId', {accountId :currentUser.id })
       }
 
       if(filter.role ===  TransactionRole.CashOut ){
-        query.andWhere("transactions.debitedAccountId = :accountId", {accountId :currentUser.id })
+        query.andWhere('transactions.debitedAccount = :accountId', {accountId :currentUser.id })
       }
 
       
       if(filter.role ===  TransactionRole.All ){
-        query.andWhere("transactions.creditedAccountId = :accountId or transactions.debitedAccountId = :accountId",{accountId :currentUser.id})
+        query.andWhere('transactions.creditedAccount = :accountId or transactions.debitedAccount = :accountId',{accountId :currentUser.id})
       }
 
       if(filter.date){
         query.andWhere('transactions.createdAt BETWEEN :startDate AND :endDate', {
-        startDate: startOfDay(new Date(filter.date)),
-        endDate: endOfDay(new Date(filter.date))
-        })
+          startDate: startOfDay(new Date(filter.date)),
+          endDate: endOfDay(new Date(filter.date))
+          })
       }
-
-      console.log(query.getQuery())
       
-    return query.getRawMany()
+    return query.getMany();
   }
 }

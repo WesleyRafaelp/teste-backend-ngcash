@@ -17,7 +17,6 @@ async function bootstrap() {
       scheme: 'bearer',
       bearerFormat: 'JWT',  
     },'JWT-auth')
-    .addTag('x')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);

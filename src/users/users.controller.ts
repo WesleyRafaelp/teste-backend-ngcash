@@ -20,25 +20,13 @@ export class UsersController {
 
   }
 
-
-  @Get()
-  findAll(){
-    return this.usersService.findAll()
-  }
-
-  @Get('/user')
+  @Get('/account')
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)
   findOneAccount(@AuthUser() currentUser: User) {
     return this.usersService.findOneAccount(currentUser);
   }
-
-  // @Get()
-  // findOneLogin(email: string) {
-  //   return this.usersService.findOneLogin(email);
-  // }
-
-  
+ 
   @Patch()
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard)

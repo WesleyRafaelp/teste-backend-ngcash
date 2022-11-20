@@ -1,3 +1,4 @@
+import NumericTransformer from "src/common/transform/numeric";
 import { Transaction } from "src/transactions/entities/transaction.entity";
 import { User } from "src/users/entities/user.entity";
 import { Column, Entity, OneToMany, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
@@ -7,7 +8,7 @@ export class Account {
     @PrimaryGeneratedColumn()
     id: number
     
-    @Column()
+    @Column({ type: 'decimal', transformer: NumericTransformer})
     balance: number
 
     @OneToMany(() => Transaction, (transaction) => transaction.debitedAccount)

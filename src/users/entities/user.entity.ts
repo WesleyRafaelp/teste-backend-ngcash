@@ -1,6 +1,6 @@
 import { Account } from "src/accounts/entities/account.entity";
 import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import cryptoTransform from "../user.password-crypto";
+import cryptoTransform from "../../common/transform/password-crypto";
 
 @Entity('users')
 export class User {

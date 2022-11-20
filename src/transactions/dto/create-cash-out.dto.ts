@@ -4,6 +4,6 @@ export class CreateCashOutDto {
     @ApiProperty()
     username: string
 
-    @ApiProperty()
+    @ApiProperty({type: Number})
     value: number
 }

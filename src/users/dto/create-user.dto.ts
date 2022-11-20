@@ -1,8 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { createApiPropertyDecorator } from "@nestjs/swagger/dist/decorators/api-property.decorator";
 import { Contains, IsString, Length, validate } from "class-validator";
 import { Account } from "src/accounts/entities/account.entity";
-import cryptoTransform from "../user.password-crypto";
+
 
 export class CreateUserDto {
     

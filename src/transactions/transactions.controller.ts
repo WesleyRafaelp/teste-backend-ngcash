@@ -34,11 +34,4 @@ export class TransactionsController {
     ){
     return await this.transactionsService.filterTransaction(transactionFilterDto, currentUser);
   }
-
-  // @Get('/user')
-  // @ApiBearerAuth('JWT-auth')
-  // @UseGuards(JwtAuthGuard)
-  // findAllUserTransaction(@AuthUser() currentUser: User) {
-  //   return this.transactionsService.findAllUserTransaction(currentUser);
-  // }
 }

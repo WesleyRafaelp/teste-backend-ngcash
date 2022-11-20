@@ -51,13 +51,8 @@ export class UsersService {
     return this.userRepository.findOne({select:['id','username','account'], where:{username: currentUser.username}});
   }
 
-  findAll(){
-    const user = this.userRepository.find()
-    return user
-  }
-
   async findOneUser(username: string) {
-    const user = this.userRepository.findOne({where:{username:username}})
+    const user = await this.userRepository.findOne({where:{username:username}})
 
     if(!user) {
       throw new UnauthorizedException('not authorized')
@@ -111,9 +106,8 @@ export class UsersService {
       throw new HttpException('precisa ao menos uma letra maiúscula e um número', HttpStatus.BAD_REQUEST)
     }
     
-   const up = await this.userRepository.save({...user, ...updateUserDto})
+    await this.userRepository.save({...user, ...updateUserDto})
 
-    console.log(up)
 
     return 'usuario atualizado'
 
