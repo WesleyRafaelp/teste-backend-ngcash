@@ -4,9 +4,15 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe())
+  const app = await NestFactory.create(AppModule)
 
+  app.useGlobalPipes(new ValidationPipe({
+    transform: true,
+    forbidUnknownValues: false
+  }))
+
+  app.enableCors()
+  
   const config = new DocumentBuilder()
     .setTitle('API NG.CASH')
     .setDescription('API NG.CASH')

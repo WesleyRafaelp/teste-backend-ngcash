@@ -13,10 +13,19 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
  
+  @Get()
+  findAll(){
+    return this.usersService.findAll()
+  }
+
+  @Get('user/:id')
+  findUser(@Param('id') id: string){
+    return this.usersService.findOne(id)
+  }
+
   @Post()
-  create(@Body() createUserDto: CreateUserDto, @AuthUser() currentUser: User) {
-    console.log(currentUser);
-    return this.usersService.create(createUserDto);
+  async create(@Body() createUserDto: CreateUserDto) {
+    return await this.usersService.create(createUserDto);
 
   }
 

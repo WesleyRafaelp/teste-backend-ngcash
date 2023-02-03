@@ -60,11 +60,28 @@ export class UsersService {
     return user
   }
 
+  findOne(id: string) {
+    const user = this.userRepository.findOne({where:{id:parseInt(id)}})
+
+    if(!user) {
+      throw new BadRequestException('user not exist !!!')
+    }
+
+    return user
+  }
 
 
   async validateCashOut(currentUser:User, userNameCashIn:string, value:number) {
-    const userCashOut = await this.userRepository.findOne({where:{username:currentUser.username}})
-    const userCashIn = await this.userRepository.findOne({where:{username: userNameCashIn}})
+    const userCashOut = await this.userRepository.findOne({
+      where:{
+        username:currentUser.username
+      }
+    })
+    const userCashIn = await this.userRepository.findOne({
+      where:{
+        username: userNameCashIn
+      }
+    })
 
     if(userCashOut.username === userNameCashIn) {
       throw new ConflictException()
@@ -87,8 +104,6 @@ export class UsersService {
 
   async update(currentUser: User, updateUserDto:UpdateUserDto){
     const user = await this.userRepository.findOne({where:{username:currentUser.username}})
-     
-    console.log(user)
 
     const userDataBase = await this.userRepository.findOne({where:{ username: updateUserDto.username}})
 
@@ -111,5 +126,9 @@ export class UsersService {
 
     return 'usuario atualizado'
 
+  }
+
+  findAll(){
+    return this.userRepository.find()
   }
 }

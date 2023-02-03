@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { arrayContains } from 'class-validator';
-import {endOfDay, format, startOfDay} from 'date-fns';
+import { endOfDay, format, startOfDay } from 'date-fns';
+import { th } from 'date-fns/locale';
 import { join } from 'path';
 import { AccountsService } from 'src/accounts/accounts.service';
 import { Account } from 'src/accounts/entities/account.entity';
@@ -37,9 +38,13 @@ export class TransactionsService {
       throw new BadRequestException()
     }
 
-    await this.usersService.validateCashOut(currentUser, userCashIn.username, createCashOutDto.value);
+    await this.usersService.validateCashOut(
+      currentUser,
+      userCashIn.username,
+      createCashOutDto.value
+    );
 
-    const createTransaction = this.transactionRepository.create({
+    const createTransaction = await this.transactionRepository.create({
       debitedAccount: currentUser.account,
       creditedAccount: userCashIn.account,
       value: createCashOutDto.value
@@ -60,38 +65,162 @@ export class TransactionsService {
     return 'a new transaction created';
   }
 
-  async filterTransaction( filter : TransactionFilterDto , currentUser: User) {
+  async filterTransaction(filter: TransactionFilterDto, currentUser: User) {
+
     const query = await this.transactionRepository.createQueryBuilder('transactions')
-    .select([
-      'transactions.id',
-      'creditedAccount.id',
-      'debitedAccount.id',
-      'transactions.value',
-      'transactions.createdAt'
-    ])
-    .innerJoin('transactions.creditedAccount', 'creditedAccount')
-    .innerJoin('transactions.debitedAccount', 'debitedAccount')
+      .select([
+        'transactions.id',
+        'creditedAccount.id',
+        'debitedAccount.id',
+        'transactions.value',
+        'transactions.createdAt'
+      ])
+      .innerJoin('transactions.creditedAccount', 'creditedAccount')
+      .innerJoin('transactions.debitedAccount', 'debitedAccount')
+      .orderBy('transactions.createdAt', 'DESC')
 
-      if(filter.role ===  TransactionRole.CashIn ){
-        query.andWhere('transactions.creditedAccount = :accountId', {accountId :currentUser.id })
-      }
+    if (filter.role === TransactionRole.All && filter.date) {
 
-      if(filter.role ===  TransactionRole.CashOut ){
-        query.andWhere('transactions.debitedAccount = :accountId', {accountId :currentUser.id })
-      }
+      const cashIn = await this.transactionRepository.find({
+        select: {
+          id:true,
+          value:true,
+          createdAt:true,
+          creditedAccount:{
+            id:true,
+            balance:false,
+            credited:false,
+            debited:false
+          },
+          debitedAccount:{
+            id:true,
+            balance:false,
+            credited:false,
+            debited:false
+          },
+        },
+        where: {
+          creditedAccount: currentUser.account,
+          createdAt:
+            Between(
+              startOfDay(new Date(filter.date)),
+              endOfDay(new Date(filter.date))
+            ),
+        },
+        order: {
+          createdAt: 'DESC',
+        },
+        relations:{
+          creditedAccount:true,
+          debitedAccount:true
+        }
+      });
 
-      
-      if(filter.role ===  TransactionRole.All ){
-        query.andWhere('transactions.creditedAccount = :accountId or transactions.debitedAccount = :accountId',{accountId :currentUser.id})
-      }
+      const cashOut = await this.transactionRepository.find({
+        select: {
+          id:true,
+          value:true,
+          createdAt:true,
+          creditedAccount:{
+            id:true,
+            balance:false,
+          },
+          debitedAccount:{
+            id:true,
+            balance:false,
+          },
+        },
+        where: {
+          debitedAccount: currentUser.account,
+          createdAt: 
+            Between(
+              startOfDay(new Date(filter.date)), 
+              endOfDay(new Date(filter.date))
+            ),
+        },
+        order: {
+          createdAt: 'DESC',
+        },
+        relations:{
+          creditedAccount:true,
+          debitedAccount:true
+        }
+      });
 
-      if(filter.date){
-        query.andWhere('transactions.createdAt BETWEEN :startDate AND :endDate', {
-          startDate: startOfDay(new Date(filter.date)),
-          endDate: endOfDay(new Date(filter.date))
-          })
-      }
-      
-    return query.getMany();
+      return { cashIn: cashIn, cashOut: cashOut };
+    }
+
+    if (filter.role === TransactionRole.All) {
+      const cashIn = await this.transactionRepository.find({
+        select:{
+          id:true,
+          value:true,
+          createdAt:true,
+          creditedAccount:{
+            id:true,
+            balance:false,
+          },
+          debitedAccount:{
+            id:true,
+            balance:false,
+          },
+        },
+        where: {
+          creditedAccount: currentUser.account,
+        },
+        order: {
+          createdAt: 'DESC',
+        },
+        relations:{
+          creditedAccount:true,
+          debitedAccount:true
+        }
+      })
+
+      const cashOut = await this.transactionRepository.find({
+        select: {
+          id:true,
+          value:true,
+          createdAt:true,
+          creditedAccount:{
+            id:true,
+            balance:false,
+          },
+          debitedAccount:{
+            id:true,
+            balance:false,
+          },
+        },
+        where: {
+          debitedAccount: currentUser.account
+        },
+        order: {
+          createdAt: 'DESC',
+        },
+        relations:{
+          creditedAccount:true,
+          debitedAccount:true
+        },
+      })
+
+      return { cashIn: cashIn, cashOut: cashOut }
+    }
+
+    if (filter.role === TransactionRole.CashIn) {
+      query.andWhere('transactions.creditedAccount = :accountId', { accountId: currentUser.id })
+    }
+
+    if (filter.role === TransactionRole.CashOut) {
+      query.andWhere('transactions.debitedAccount = :accountId', { accountId: currentUser.id })
+    }
+
+    if (filter.date) {
+      query.andWhere('transactions.createdAt BETWEEN :startDate AND :endDate', {
+        startDate: startOfDay(new Date(filter.date)),
+        endDate: endOfDay(new Date(filter.date))
+      })
+    }
+
+    return query.getMany()
   }
 }
